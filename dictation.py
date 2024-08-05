@@ -17,10 +17,23 @@ audio_queue = queue.Queue()
 THRESHOLD = 500  # Adjust this based on your environment's noise level
 SILENCE_DURATION = 2  # seconds of silence to consider it a delimiter
 
-# Function to record audio from default input device
-def record_audio():
+# Function to list all input devices and allow selection
+def select_input_device():
     p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=1024)
+    print("Available input devices:")
+    for i in range(p.get_device_count()):
+        dev = p.get_device_info_by_index(i)
+        if dev['maxInputChannels'] > 0:
+            print(f"{i}: {dev['name']}")
+
+    device_index = int(input("Select the input device index: "))
+    p.terminate()
+    return device_index
+
+# Function to record audio from selected input device
+def record_audio(device_index):
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=1024, input_device_index=device_index)
 
     silence_start_time = None
 
@@ -61,10 +74,18 @@ def process_audio():
         if audio_frames:
             audio_data = np.frombuffer(b''.join(audio_frames), dtype=np.int16)
             audio_data = audio_data.astype(np.float32) / 32768.0
-            text = model.transcribe(audio_data)["text"]
 
-            # Filter out unwanted phrases
-            filtered_text = text.replace("Thank you", "").strip()
+            # Ensure audio_data is of the correct length expected by Whisper
+            audio_data = whisper.pad_or_trim(audio_data)
+
+            # Check if audio_data is in the correct format for Whisper
+            mel = whisper.log_mel_spectrogram(audio_data).to(model.device)
+
+            options = whisper.DecodingOptions(language="en")
+
+            result = whisper.decode(model, mel, options)
+
+            filtered_text = result.text.replace("Thank you", "").strip()
 
             if filtered_text:  # Only type if there's valid text
                 pyautogui.write(filtered_text)
@@ -77,12 +98,15 @@ def toggle_recording():
         recording = False
     else:
         recording = True
-        threading.Thread(target=record_audio).start()
+        threading.Thread(target=record_audio, args=(selected_device_index,)).start()
         threading.Thread(target=process_audio).start()
 
 # Setup hotkey
 recording = False
 keyboard.add_hotkey('ctrl+shift+alt+s', toggle_recording)
+
+# Select input device
+selected_device_index = select_input_device()
 
 print("Press Ctrl+Shift+Alt+S to toggle dictation.")
 keyboard.wait('esc')  # Press 'Esc' to exit the script
