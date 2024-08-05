@@ -7,6 +7,7 @@ import queue
 import time
 import numpy as np
 import logging
+import simpleaudio as sa  # Cross-platform sound playback
 
 # Initialize Whisper model
 model = whisper.load_model("small")
@@ -64,6 +65,16 @@ def process_audio():
             pyautogui.write(filtered_text)
         time.sleep(0.5)
 
+# Function to generate and play a single beep sound
+def play_beep(frequency=440, duration=0.1):
+    fs = 44100  # Sampling rate
+    t = np.linspace(0, duration, int(fs * duration), False)
+    wave = np.sin(frequency * t * 2 * np.pi)
+    audio = wave * (2**15 - 1) / np.max(np.abs(wave))
+    audio = audio.astype(np.int16)
+    play_obj = sa.play_buffer(audio, 1, 2, fs)
+    play_obj.wait_done()
+
 # Function to toggle recording
 def toggle_recording():
     global recording
@@ -71,11 +82,13 @@ def toggle_recording():
         recording = False  # Stop recording
         print("Recording stopped.")
         logging.info("Recording stopped.")
+        play_beep()  # Play beep sound on stop
         process_audio()  # Process audio after recording stops
     else:
         recording = True  # Start recording
         print("Recording started...")
         logging.info("Recording started.")
+        play_beep()  # Play beep sound on start
         threading.Thread(target=record_audio, args=(selected_device_index,)).start()
 
 # Select audio input device
