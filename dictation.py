@@ -6,12 +6,16 @@ import threading
 import queue
 import time
 import numpy as np
+import logging
 
 # Initialize Whisper model
 model = whisper.load_model("small")
 
 # Queue for audio frames
 audio_queue = queue.Queue()
+
+# Setup logging
+logging.basicConfig(filename='recording_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 # Function to list and select an audio input device
 def select_audio_input_device():
@@ -65,9 +69,13 @@ def toggle_recording():
     global recording
     if recording:
         recording = False  # Stop recording
+        print("Recording stopped.")
+        logging.info("Recording stopped.")
         process_audio()  # Process audio after recording stops
     else:
         recording = True  # Start recording
+        print("Recording started...")
+        logging.info("Recording started.")
         threading.Thread(target=record_audio, args=(selected_device_index,)).start()
 
 # Select audio input device
