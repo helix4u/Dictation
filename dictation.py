@@ -27,21 +27,21 @@ def select_audio_input_device():
         if device_info['maxInputChannels'] > 0:
             print(f"{i}: {device_info['name']}")
     
-    device_index = int(input("Select the device index for audio input (default is 0): ") or 0)
+    device_index = int(input("Select the device index for audio input (default is 6): ") or 6)
     p.terminate()
     return device_index
 
 # Function to record audio from selected input device
 def record_audio(device_index):
     p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, input_device_index=device_index, frames_per_buffer=1024)
+    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, input_device_index=device_index, frames_per_buffer=512)
 
     silence_start_time = None
 
     while True:
         if not recording:
             break
-        data = stream.read(8096)
+        data = stream.read(4096)
         audio_queue.put(data)
 
         # Check if the current audio chunk is silent
@@ -80,7 +80,8 @@ def process_audio():
             # Filter out unwanted phrases
             filtered_text = text.replace("Thank you.", "").strip()
 
-            if filtered_text:  # Only type if there's valid text
+			# Additional filters for whitespace or specific unwanted text
+            if filtered_text and filtered_text != "you" and filtered_text.strip():
                 pyautogui.write(filtered_text)
             time.sleep(0.5)
 
