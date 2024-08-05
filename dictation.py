@@ -96,7 +96,7 @@ selected_device_index = select_audio_input_device()
 
 # Setup hotkey
 recording = False
-keyboard.add_hotkey('ctrl+shift+alt+s', toggle_recording)
+keyboard.add_hotkey('ctrl+alt+space', toggle_recording)
 
-print("Press Ctrl+Shift+Alt+S to start/stop recording and process dictation.")
+print("Press ctrl+alt+space to start/stop recording and process dictation.")
 keyboard.wait('esc')  # Press 'Esc' to exit the script
