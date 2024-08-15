@@ -10,7 +10,7 @@ import logging
 import simpleaudio as sa  # Cross-platform sound playback
 
 # Initialize Whisper model
-model = whisper.load_model("small")
+model = whisper.load_model("base.en")
 
 # Queue for audio frames
 audio_queue = queue.Queue()
@@ -35,10 +35,10 @@ def select_audio_input_device():
 # Function to record audio from selected input device
 def record_audio(device_index):
     p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, input_device_index=device_index, frames_per_buffer=512)
+    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, input_device_index=device_index, frames_per_buffer=1024)
 
     while recording:
-        data = stream.read(4096)
+        data = stream.read(1024)
         audio_queue.put(data)
 
     stream.stop_stream()
@@ -58,10 +58,14 @@ def process_audio():
         text = model.transcribe(audio_data)["text"]
 
         # Filter out unwanted phrases
-        filtered_text = text.replace("Thank you.", "").strip()
+        filtered_text = text.replace("", "").strip()
 
         # Additional filters for whitespace or specific unwanted text
         if filtered_text and filtered_text != "you" and filtered_text.strip():
+            # Release all held down keys to avoid accidental key presses
+            pyautogui.keyUp('ctrl')
+            pyautogui.keyUp('alt')
+            pyautogui.keyUp('shift')
             pyautogui.write(filtered_text)
         time.sleep(0.5)
 
