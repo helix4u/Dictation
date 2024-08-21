@@ -30,8 +30,8 @@ def select_audio_input_device():
         if device_info['maxInputChannels'] > 0:
             print(f"{i}: {device_info['name']}")
     
-    # Note: The default device index of 6 is set for "Whisper Broadcast" on the user's machine.
-    # Adjust the default for your use case, especially if publishing this script to GitHub.
+    # Note: The default device index of 6 is set for Nvidia Broadcast on the user's machine.
+    # Adjust the default for your use case.
     device_index = int(input("Select the device index for audio input (default is 6): ") or 6)
     p.terminate()
     return device_index
