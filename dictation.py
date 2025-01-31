@@ -32,7 +32,7 @@ def select_audio_input_device():
     
     # Note: The default device index of 6 is set for Nvidia Broadcast on the user's machine.
     # Adjust the default for your use case.
-    device_index = int(input("Select the device index for audio input (default is 6): ") or 6)
+    device_index = int(input("Select the device index for audio input (default is 1): ") or 1)
     p.terminate()
     return device_index
 
