@@ -67,16 +67,41 @@ def monitor_model_usage():
 
 # Function to record audio from selected input device
 def record_audio(device_index):
-    p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, input_device_index=device_index, frames_per_buffer=1024)
+    global recording
+    p = None
+    stream = None
+    try:
+        p = pyaudio.PyAudio()
+        stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, input_device_index=device_index, frames_per_buffer=1024)
+    except OSError as e:
+        print("Audio device error: Please check your microphone connection. Recording stopped.")
+        logging.error(f"Error initializing audio device: {e}")
+        recording = False
+        unload_model()
+        if stream:
+            stream.stop_stream()
+            stream.close()
+        if p:
+            p.terminate()
+        return
 
-    while recording:
-        data = stream.read(1024)
-        audio_queue.put(data)
-
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
+    try:
+        while recording:
+            try:
+                data = stream.read(1024)
+                audio_queue.put(data)
+            except OSError as e:
+                print("Audio device error: Please check your microphone connection. Recording stopped.")
+                logging.error(f"Error reading audio stream: {e}")
+                recording = False
+                unload_model()
+                break  # Exit the loop
+    finally:
+        if stream:
+            stream.stop_stream()
+            stream.close()
+        if p:
+            p.terminate()
 
 # Function to process audio and do real-time dictation
 def process_audio():
