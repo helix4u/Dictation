@@ -1,6 +1,6 @@
 # Whisper Dictation
 
-Whisper Dictation is a hotkey-driven desktop dictation tool that records short bursts of audio, transcribes them with OpenAI Whisper, and types the recognized text into whichever application currently has focus. The repository also bundles an experimental "shadow play" style recorder that can preserve the previous minute of screen and microphone activity on demand.
+Whisper Dictation is a hotkey-driven desktop dictation tool that records short bursts of audio, transcribes them with OpenAI Whisper, and types the recognized text into whichever application currently has focus.
 
 ## Features
 - Quick toggle (Ctrl+Alt+Space) to record speech and insert the transcription in place
@@ -8,32 +8,88 @@ Whisper Dictation is a hotkey-driven desktop dictation tool that records short b
 - Device selection prompt so you pick the correct microphone at startup
 - Audible start/stop beeps to confirm recording state
 - Logging of every recording session to `recording_log.txt`
-- Optional screen/audio buffer capture script (`shadowplaydesktop.py`) for retroactive recording
 
 ## Prerequisites
 - Python 3.9 or newer
-- FFmpeg command-line tools on your PATH (required for `shadowplaydesktop.py`)
 - PortAudio runtime (needed by PyAudio). On Windows install the PyAudio wheels, on macOS use `brew install portaudio`, on Linux use your package manager.
 
 ## Installation
-1. Create and activate a virtual environment (recommended).
+
+### Quick Start (Recommended)
+Simply run the appropriate script for your operating system:
+
+**Windows:**
+```cmd
+start.bat
+```
+
+**macOS/Linux:**
+```bash
+./start.sh
+```
+
+These scripts will automatically:
+- Check for Python 3.9+ installation
+- Create a virtual environment
+- Install all required dependencies
+- Start the dictation application
+
+### Manual Installation
+If you prefer to install manually:
+
+1. Create and activate a virtual environment (recommended):
+   ```bash
+   python -m venv venv
+   # Windows:
+   venv\Scripts\activate
+   # macOS/Linux:
+   source venv/bin/activate
+   ```
+
 2. Install Python dependencies:
    ```bash
-   pip install openai-whisper torch pyaudio pyautogui keyboard numpy simpleaudio ffmpeg-python
+   pip install -r requirements.txt
    ```
-   - GPU acceleration: install the CUDA-enabled build of PyTorch that matches your drivers (see [pytorch.org](https://pytorch.org/get-started/locally/)).
-   - macOS/Linux users may need additional permissions for global hotkeys (the `keyboard` package).
+   
+   Or install individually:
+   ```bash
+   pip install openai-whisper torch pyaudio pyautogui keyboard numpy simpleaudio pyperclip
+   ```
+
 3. Optional: place any Whisper GGML models inside the `models/` directory for future experiments. The current Python workflow downloads models automatically through the `whisper` package.
 
+### GPU Acceleration
+The installation scripts automatically install CUDA-enabled PyTorch for GPU acceleration. If CUDA installation fails, the scripts will fall back to CPU-only PyTorch.
+
+**Requirements for GPU acceleration:**
+- NVIDIA GPU with CUDA support
+- CUDA 11.8+ drivers installed
+- Compatible PyTorch version (automatically installed)
+
+If you need a different CUDA version, visit [pytorch.org](https://pytorch.org/get-started/locally/) for your specific setup.
+
 ## Usage
-1. Start the dictation agent:
-   ```bash
-   python dictation.py
-   ```
-2. Choose the input device index when prompted. The script lists every available capture device that exposes input channels.
-3. Press `Ctrl+Alt+Space` to begin a recording. A high-pitched beep confirms recording has started.
-4. Press the hotkey again to stop. A lower beep plays, the audio is transcribed with the Whisper `tiny.en` model, and the resulting text is typed into the active window.
-5. Repeat as needed. Press `Shift+Esc` to quit the script entirely.
+
+### Starting the Application
+**Option 1 - Using the installation scripts (recommended):**
+```bash
+# Windows
+start.bat
+
+# macOS/Linux
+./start.sh
+```
+
+**Option 2 - Manual start:**
+```bash
+python dictation.py
+```
+
+### Using the Dictation Tool
+1. Choose the input device index when prompted. The script lists every available capture device that exposes input channels.
+2. Press `Ctrl+Alt+Space` to begin a recording. A high-pitched beep confirms recording has started.
+3. Press the hotkey again to stop. A lower beep plays, the audio is transcribed with the Whisper `tiny.en` model, and the resulting text is typed into the active window.
+4. Repeat as needed. Press `Shift+Esc` to quit the script entirely.
 
 While the script is idle for more than 15 seconds, the Whisper model is automatically unloaded and GPU memory reclaimed. The next recording triggers a reload.
 
@@ -46,25 +102,26 @@ While the script is idle for more than 15 seconds, the Whisper model is automati
 ## Logging
 Session events (start/stop timestamps) are appended to `recording_log.txt`. Keep the file around for auditing, or rotate it manually if it grows too large.
 
-## Additional Tools
-`shadowplaydesktop.py` offers a rolling one-minute buffer of screen captures and microphone audio. Run it separately from dictation when you need a manual "save last minute" feature:
-```bash
-python shadowplaydesktop.py
-```
-- Press `Ctrl+Shift+S` to write the buffered video (`output_video.mp4`) and audio (`output_audio.wav`) to disk.
-- Press `Esc` to stop the recorder.
-
-This script depends heavily on FFmpeg (`ffmpeg-python`) and may require tuning to match your monitor resolution and performance budget.
-
 ## Project Structure
 - `dictation.py` – main dictation workflow that captures audio, transcribes with Whisper, and simulates keyboard entry.
-- `shadowplaydesktop.py` – experimental retroactive recorder for screen+audio.
+- `start.bat` – Windows installation and startup script.
+- `start.sh` – Unix/Linux/macOS installation and startup script.
+- `requirements.txt` – Python dependencies list for easy installation.
 - `models/` – local store for quantised Whisper models (not used directly by the Python script yet).
 - `recorded_audio.wav` – sample recording for testing.
 - `recording_log.txt` – rolling log file written by the dictation script.
-- `SILENCE_DURATION` – placeholder file kept for backwards compatibility.
 
 ## Troubleshooting
+
+### Installation Issues
+- **PyAudio installation fails**: 
+  - Windows: Install Microsoft Visual C++ Build Tools or try `pip install --only-binary=all pyaudio`
+  - macOS: `brew install portaudio` then retry
+  - Linux: `sudo apt-get install portaudio19-dev python3-pyaudio` (Ubuntu/Debian) or equivalent for your distro
+- **Permission denied on start.sh**: Run `chmod +x start.sh` to make the script executable
+- **Python not found**: Ensure Python 3.9+ is installed and in your system PATH
+
+### Runtime Issues
 - **No text appears**: confirm the target window accepts keyboard input and that accessibility permissions are granted (macOS requires enabling accessibility for the terminal/Python process).
 - **Hotkey not firing**: some virtual desktops intercept complex hotkeys; change the key combo in `dictation.py` if needed.
 - **Audio glitches**: lower the buffer size or sample rate in `record_audio()` or verify the microphone is not used by other apps.
