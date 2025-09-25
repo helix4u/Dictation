@@ -10,6 +10,15 @@ import logging
 import simpleaudio as sa  # Cross-platform sound playback
 import torch
 import gc
+import sys
+import contextlib
+
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
+PASTE_COMBO = 'command+v' if sys.platform == 'darwin' else 'ctrl+v'
 
 # Initialize Whisper model placeholder
 model = None
@@ -17,6 +26,33 @@ model = None
 # Queue for audio frames
 audio_queue = queue.Queue()
 
+def emit_transcript(text: str) -> None:
+    """Emit text via a single paste operation when possible for faster output."""
+    if not text:
+        return
+
+    for key in ('ctrl', 'alt', 'shift'):
+        pyautogui.keyUp(key)
+
+    if pyperclip:
+        previous = None
+        try:
+            previous = pyperclip.paste()
+        except Exception:
+            previous = None
+        try:
+            pyperclip.copy(text)
+            time.sleep(0.02)
+            keyboard.send(PASTE_COMBO)
+            time.sleep(0.05)
+        except Exception:
+            keyboard.write(text, delay=0)
+            return
+        if previous is not None:
+            with contextlib.suppress(Exception):
+                pyperclip.copy(previous)
+    else:
+        keyboard.write(text, delay=0)
 # Setup logging
 logging.basicConfig(filename='recording_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
@@ -40,7 +76,7 @@ def load_model():
     global model
     if model is None:
         print("Loading Whisper model...")
-        model = whisper.load_model("base.en")
+        model = whisper.load_model("tiny.en")
         print("Model loaded.")
     # Update the last used timestamp
     global last_model_use_time
@@ -67,41 +103,16 @@ def monitor_model_usage():
 
 # Function to record audio from selected input device
 def record_audio(device_index):
-    global recording
-    p = None
-    stream = None
-    try:
-        p = pyaudio.PyAudio()
-        stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, input_device_index=device_index, frames_per_buffer=1024)
-    except OSError as e:
-        print("Audio device error: Please check your microphone connection. Recording stopped.")
-        logging.error(f"Error initializing audio device: {e}")
-        recording = False
-        unload_model()
-        if stream:
-            stream.stop_stream()
-            stream.close()
-        if p:
-            p.terminate()
-        return
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, input_device_index=device_index, frames_per_buffer=1024)
 
-    try:
-        while recording:
-            try:
-                data = stream.read(1024)
-                audio_queue.put(data)
-            except OSError as e:
-                print("Audio device error: Please check your microphone connection. Recording stopped.")
-                logging.error(f"Error reading audio stream: {e}")
-                recording = False
-                unload_model()
-                break  # Exit the loop
-    finally:
-        if stream:
-            stream.stop_stream()
-            stream.close()
-        if p:
-            p.terminate()
+    while recording:
+        data = stream.read(1024)
+        audio_queue.put(data)
+
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
 
 # Function to process audio and do real-time dictation
 def process_audio():
@@ -121,11 +132,7 @@ def process_audio():
 
         # Additional filters for whitespace or specific unwanted text
         if filtered_text and filtered_text != "you" and filtered_text.strip():
-            # Release all held down keys to avoid accidental key presses
-            pyautogui.keyUp('ctrl')
-            pyautogui.keyUp('alt')
-            pyautogui.keyUp('shift')
-            pyautogui.write(filtered_text)
+            emit_transcript(filtered_text)
         time.sleep(0.5)
 
     print("Press ctrl+alt+space to start/stop recording and process dictation.")
@@ -171,4 +178,9 @@ model_monitor_thread = threading.Thread(target=monitor_model_usage, daemon=True)
 model_monitor_thread.start()
 
 print("Press ctrl+alt+space to start/stop recording and process dictation.")
-keyboard.wait('esc')  # Press 'Esc' to exit the script
+keyboard.wait('shift+esc')  # Press 'Esc' to exit the script
+
+
+
+
+
