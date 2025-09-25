@@ -1,0 +1,17 @@
+# Core dependencies for Whisper Dictation
+openai-whisper>=20231117
+pyaudio>=0.2.11
+pyautogui>=0.9.54
+keyboard>=0.13.5
+numpy>=1.24.0
+simpleaudio>=1.0.4
+pyperclip>=1.8.2
+
+# Optional: For better audio processing
+scipy>=1.10.0
+
+# PyTorch with CUDA support (GPU acceleration)
+# Install CUDA-enabled PyTorch for better performance
+torch>=2.0.0+cu118
+torchvision>=0.15.0+cu118
+torchaudio>=2.0.0+cu118

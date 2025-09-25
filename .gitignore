@@ -1,0 +1,59 @@
+# Shadowplay functionality (not part of core dictation)
+shadowplaydesktop.py
+SILENCE_DURATION
+
+# Models directory (user-specific, not shipped)
+models/
+
+# Recording and log files (user-generated)
+recorded_audio.wav
+recording_log.txt
+*.wav
+*.mp4
+*.mp3
+*.flac
+*.aac
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+output_video.mp4
+output_audio.wav
