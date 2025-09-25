@@ -132,3 +132,7 @@ Session events (start/stop timestamps) are appended to `recording_log.txt`. Keep
 - Live streaming transcription instead of post-stop processing
 - UI overlay showing recording status and last transcript
 - Integration with the local GGML models stored in `models/`
+  
+## Support
+
+If the tool is helpful, consider supporting it on [Ko-fi](https://ko-fi.com/gille).
